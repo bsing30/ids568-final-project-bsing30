@@ -1,0 +1,45 @@
+groups:
+  - name: support_intent_operational_health
+    rules:
+      # NOTE: Gauges populated by instrumentation.py / simulate_traffic.py.
+      # In a real scrape setup, Prometheus would evaluate firing state from these thresholds.
+      - alert: HighPredictionErrorRate
+        expr: prediction_error_rate > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prediction error rate is elevated (>5%).
+          description: Investigate malformed payloads / upstream regressions before routing SLA is impacted.
+
+      - alert: ElevatedPredictionLatencyHistogram
+        # Uses histogram_quantile assuming standard Prometheus exposition for histogram metrics.
+        expr: |-
+          histogram_quantile(
+            0.95,
+            sum(rate(prediction_latency_seconds_bucket[5m])) by (le)
+          ) > 0.30
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: P95 prediction latency breached 300ms guardrail window.
+          description: Canary rollback if sustained; correlate with saturation, queueing, and downstream dependencies.
+
+      - alert: FeatureDriftEscalation
+        expr: feature_drift_score > 0.25
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Aggregate drift indicator crossed investigation threshold (>0.25).
+          description: Slice by intent/category; correlate with PSI from drift job; initiate retraining if sustained.
+
+      - alert: InputIntegrityDegradation
+        expr: input_anomaly_rate > 0.08
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Input anomaly rate breached integrity threshold (>8%).
+          description: Block risky traffic patterns; tighten schema validation; escalate to platform team.

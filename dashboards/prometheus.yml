@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Default matches `python src/monitoring/metrics_exporter.py` (:8002) so local demos can run
+  # Prometheus against the instrumentation registry without rewriting labels.
+  - job_name: "support-intent-api"
+    static_configs:
+      - targets: ["localhost:8002"]
+    metrics_path: /metrics

@@ -1,0 +1,5 @@
+{"timestamp":"2026-04-20T14:02:00Z","event_type":"model_version_change","from":"v1.2","to":"v1.3","owner":"mlops_lead","ticket":"REL-1042"}
+{"timestamp":"2026-04-21T09:30:00Z","event_type":"approval","stage":"risk_review","approver":"ai_governance_committee","status":"approved_with_conditions"}
+{"timestamp":"2026-04-23T16:55:00Z","event_type":"monitoring_alert","metric":"feature_drift_score","value":0.27,"threshold":0.25,"action":"traffic_capped_25_percent"}
+{"timestamp":"2026-04-24T10:05:00Z","event_type":"intervention","action":"trigger_retraining_pipeline","reason":"sustained_drift_3_windows"}
+{"timestamp":"2026-04-25T12:10:00Z","event_type":"governance_update","artifact":"docs/cto-memo.md","summary":"Added tiered HITL escalation protocol aligned to monitoring alert severities","approver":"ai_governance_committee"}
