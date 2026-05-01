@@ -1,35 +1,41 @@
-# Drift Diagnostic Report
+# Drift diagnostic writeup
 
-## Summary
-Drift analysis across 12 windows combines **numerical embedding aggregates** (`psi_primary`, `psi_secondary`) with a **label-mix PSI** from categorical intents (`billing`, `technical`, `account`, `escalation`). The aggregate curve (`psi_aggregate`) emphasizes primary semantic drift and is meant to relate to what you would trend on dashboards (distribution shift + anomaly rate), while still documenting label mix changes separately.
+Toy setup: twelve rolling windows comparing “reference-ish” embeddings vs creeping production-ish draws, plus categorical intent percentages shifting over time (`billing`, `technical`, `account`, `escalation`). Script emits `psi_primary`, `psi_secondary`, canned label PSI, mashed into `psi_aggregate` so one line can mimic what you'd plot on infra dashboards.
 
-Across windows, PSI rises into the **investigation band** (>0.20) concurrent with sharper KS statistic trends on primary features (`ks_p_primary` becomes numerically negligible in late windows).
+Late windows PSI clears ~0.2 (my “squint harder” cutoff) while KS reads basically “yeah these aren't the same distro anymore.”
 
-## Features Most Drifted
-Primary drift dominates because simulated production traffic shifts upward in mean semantics (`+shift per window`). Secondary covariance drift emerges because correlated jitter noise increases concurrently (common when upstream logging changes subtly alter embeddings).
+## What moved most
+Primary synthetic feature steadily walks upward each window—cheap stand-in for phrasing centroid drift.
 
-Separately, **intent label distributions drift materially** as technical share gradually declines while escalation-oriented traffic grows. This mirrors realistic production situations (product launches spike billing language; outages spike escalation language).
+Secondary feature drifts with it because correlation noise ramps (think logging quirks).
 
-## Label Drift Interpretation (if labels were latent)
-Because this subsystem is classification-oriented, latent label mixtures can shift faster than embeddings; **label PSI** captures this even when ground-truth supervision is delayed.
+Label mix slips: escalation share grows at the expense of technical-ish intents (launch noise vs outage chatter story).
 
-## Predicted Impact on Model Performance
-For this support-intent system, escalation-heavy traffic is historically correlated with poorer automated resolution because intents require escalation workflows and nuanced policy interpretation.
+Label mix caveat: categories can drift before embeddings scream if ticket taxonomy owners churn faster than the vector corpus updates.
 
-Estimated downstream impact:
+## If this were production, what's the sting?
+Heavy escalation traffic usually means nastier prompts + longer human loops, so autopilot suffers first.
 
-- At **aggregate PSI roughly 0.28–0.37** windows, expect **additional macro-F1 drop of roughly 4–8 points** versus reference week (narrower than benign weeks) assuming similar training methodology.
-- SLA-resolution proxy KPI is expected to fall by **≈ 2–5 percentage points** because misroutes inflate manual review + rerouting time.
-- **Escalation share growth** exacerbates SLA pressure because escalation paths consume higher human capacity per ticket.
-- **Fairness slicing risk:** drift concentrated in `billing` vs `technical` imbalances can degrade routing precision for whichever segment becomes underrepresented in recent windows.
+Finger-in-the-air once aggregate PSI hugs ~0.28–0.37:
 
-These ranges are plausible engineering priors anchored to classifier sensitivity curves; reproducible evidence plots are exported to `visualizations/drift_over_time.png` plus `visualizations/drift_summary.csv`.
+macro-F1 might shed ~4–8 pts versus quiet weeks,
 
-## Recommended Interventions
-- Trigger retraining when PSI > 0.20 for 3 consecutive windows.
-- Add pre-processing normalization for new product-specific vocabulary.
-- Expand monitoring slices by intent category and language style.
-- Freeze model promotion if drift is increasing and A/B guardrails fail.
+SLA-style success might slip ~2–5 pts mainly because reviewers bounce tickets,
 
-## How this ties back to monitoring
-When drift climbs, operations should usually see correlated movement in gauges like `feature_drift_score` and higher `input_anomaly_rate`; error-rate spikes often follow prolonged drift if the classifier is stale. Prometheus alert stubs for these patterns are listed in `dashboards/prometheus-rules.yml`.
+Queues stretch when escalations hog agents,
+
+Small routing slices (billing vs technical) silently rot if imbalance worsens—worth slicing dashboards, not trusting global aggregates.
+
+Plots + CSV proofs: `visualizations/drift_over_time.png`, `visualizations/drift_summary.csv`.
+
+## What I'd do ops-wise
+Freeze promotion + open retrain/data ticket once PSI rides > 0.2 three windows straight.
+
+Normalize weird vocabulary bursts if product marketing drops new SKUs weekly.
+
+Actually monitor per-intent metrics—not just PSI soup.
+
+Abort rollouts when drift ramps while A/B guardrails flip red simultaneously.
+
+## Link to monitoring chatter
+Higher drift PSI should flirt with Prometheus drift gauge + anomaly counter before error rate screams—alerts templated loosely in `dashboards/prometheus-rules.yml`.

@@ -1,13 +1,15 @@
-# Governance Review
+# Governance review (support routing stack)
 
-## NIST AI RMF framing (informative)
-For organization, this writeup groups controls under the familiar NIST AI RMF functions (Govern / Map / Measure / Manage). It is **not** a formal compliance attestation.
-- **Govern:** release gates, approvals, and escalation path (CTO memo + `logs/audit-trail.jsonl`)
-- **Map:** retrieval + classifier boundary and workflow automation risks (`docs/system-boundary-diagram.png`)
-- **Measure:** monitoring and drift signals referenced in `dashboards/` plus `docs/drift-diagnostic-report.md`
-- **Manage:** canary/rollback posture, retrieval hygiene, and fairness slice practices listed in registers/matrices
+Borrowing NIST AI RMF wording only as section labels—not claiming we passed audits.
 
-The README and artifact paths above are the concrete records of what would be audited in practice.
+Govern / approvals / escalation → CTO memo + JSONL audit trail snippets.
+
+Mapping risks / architecture → classifier + retrieval diagram PNG.
+
+Measure → Grafana/Prometheus JSON + drift report.
+
+Manage → rollout/cleanup habits described in matrices + CTO memo bullets.
+
 
 ## Data Security
 - Inference logs are redacted for direct identifiers before storage.

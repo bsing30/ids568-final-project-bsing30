@@ -1,41 +1,36 @@
-# Model Card: Support Intent Classifier (v1.3)
+# Model card — support intent classifier (v1.3)
 
-## Model Details
-- **Model type:** Distilled transformer classifier with retrieval-augmented context features.
-- **Serving mode:** Python API with batch size up to 16 requests.
-- **Version:** v1.3 (candidate release evaluated in A/B test).
+Think of this as “what it is” + “what it’s bad at” for a classifier that guesses ticket intent before routing.
 
-## Performance
-- Validation accuracy (holdout temporal split): 0.89
-- Macro F1 (intent labels): 0.86
-- **Primary rollout KPI proxy (offline A/B simulation, `n≈4019` per variant, seed-stable):**
-  - Variant A SLA-resolution rate: ~0.6156
-  - Variant B SLA-resolution rate: ~0.6551
-  - Statistically significant uplift on primary intent-routing SLA proxy (explicit two-proportion z-test reported by `python src/ab_test/simulation.py`)
-- **Operational guardrail metrics from the same simulation run:**
-  - Escalation rate: A ~11.84% vs B ~8.86% (fewer unresolved/misclassified paths)
-  - Groundedness proxy (human audit passes): A ~76.86% vs B ~81.46%
-  - Mean inference latency surrogate: A ~223.5 ms vs B ~195.1 ms (**non-inferior / improved** versus A under the surrogate generator)
-- P95 latency SLO guardrail remains **< 300 ms** for production rollout (validated by monitoring dashboards and histogram buckets)
+## What it is
+- Smaller transformer-style classifier plus retrieval/context (conceptually—this repo is wired for instrumentation + demos, not a full trainer).
+- Served from a Python API; batch cap 16 was the assumption when I wrote sizing notes.
+- v1.3 is what the A/B sim compares against baseline.
 
-## Training Data
-- Synthetic + de-identified support-ticket corpus (intent labels: billing, technical, account, escalation).
-- Temporal split by week to reduce leakage.
-- No direct PII retained in training artifacts.
+## Numbers I lean on offline
+Held-out validation (time split): accuracy ~0.89, macro F1 ~0.86 — good enough that I’d bother monitoring drift.
 
-## Limitations and Failure Modes
-- Degrades with unseen product names or multilingual slang.
-- Sensitive to abrupt taxonomy changes in downstream routing categories.
-- Higher uncertainty on short/ambiguous inputs.
-- Retrieval-dependent misroutes increase when KB sections are stale, incorrectly labeled macros leak into retrieval, or new products lack indexed documentation.
+**A/B simulation** (`python src/ab_test/simulation.py`, ~4019 requests/side):  
+Variant B beat A on SLA-resolution-ish proxy (~65.5% vs ~61.6%) with z-test output in the terminal. Secondary stuff from the same run: fewer escalations, slightly better “would this pass audit” heuristic, latency mean somewhat lower (~195 ms vs ~223 ms simulated). Grain of salt: simulator is biased on purpose.
 
-## Ethical Risks and Considerations
-- Class imbalance can under-route minority issue categories.
-- Misclassification may delay user support resolution.
-- Potential fairness concerns across language styles.
+**Latency:** targeting P95 under 300 ms in prod (see Grafana/Prometheus thresholds in `dashboards/`).
 
-## Intended Use
-Automated first-pass intent routing for customer support operations, with human escalation for low-confidence outputs.
+## Training data
+Synthetic/de-ID mix; intents = billing / technical / account / escalation. Split by calendar week so I don’t leak future weeks into validation. Didn’t keep raw PII in artifacts.
 
-## Out-of-Scope Use
-Not approved for legal decision-making, hiring, healthcare triage, or fully autonomous user-facing responses.
+## Where it screws up
+- Weird product names, slang, other languages → more errors.
+
+- Routing taxonomy jumps (new ticket types) confuse it.
+
+- One-liner ambiguous tickets flip labels.
+
+- If retrieval KB is stale or junk sneaks into the corpus, retrieval makes misroutes worse, not better.
+
+## Ethical-ish stuff worth saying
+Minority phrasing buckets can lose out if counts are uneven. Wrong intent = annoyed customers waiting on support.
+
+## Intended use vs not
+**In scope:** first-pass routing for internal support tooling, with escalation when confidence is junk or queues look weird.
+
+**Out of scope:** legal decisions, HR, healthcare triage, “fully automated” replies to users with no oversight.

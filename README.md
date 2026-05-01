@@ -1,14 +1,13 @@
-# IDS568 — Module 8 final project (monitoring & governance)
+# IDS568 — Module 8 final project
 
-## Overview
-This repo is the Module 8 capstone for a synthetic **customer-support intent routing** system. It covers monitoring, an offline A/B simulation, drift checks, model documentation, and a system-level risk review.
+Support ticket **intent routing** toy system (**synthetic / demo traffic only**). Grafana + Prometheus scrape configs, drift scripts + plots, offline A/B sim, model card + governance memos.
 
-## Project Structure
-- `src/monitoring/`: API metrics instrumentation and synthetic traffic generator
+## What's in each folder
+- `src/monitoring/`: Prometheus metrics helpers + fake traffic generator
 - `src/ab_test/`: A/B experiment simulation and statistical analysis
 - `src/drift/`: data integrity checks and drift detection analysis
 - `dashboards/`: Prometheus and dashboard configuration assets
-- `docs/`: all written deliverables for Components 1-5
+- `docs/`: writeups per assignment parts (C1–C5)
 - `logs/`: structured audit trail
 - `visualizations/`: generated charts and dashboard/drift evidence
 
@@ -38,8 +37,5 @@ This repo is the Module 8 capstone for a synthetic **customer-support intent rou
 - C4: `src/drift/drift_detection.py`, `visualizations/drift_over_time.png`, `docs/drift-diagnostic-report.md`
 - C5: `docs/governance-review.md`, `docs/risk-matrix.md`, `docs/system-boundary-diagram.png`, `docs/cto-memo.md`
 
-## Lessons Learned
-- Operational metrics must map to intervention playbooks, not just dashboards.
-- Drift signals are only useful when connected to business impact and retraining triggers.
-- Governance artifacts are strongest when tied directly to monitored behavior and release gates.
-- A/B testing rigor (power, effect size, confidence intervals) prevents premature rollouts.
+## Lessons learned (short)
+Metrics don't help if alerts don't map to anyone's job (“now what?”). Drift graphs are the same—they're only actionable if ops knows when to freeze or queue a retrain. Governance pages should match what's actually enforced at release—not a stack of screenshots nobody reads.

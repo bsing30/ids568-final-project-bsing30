@@ -1,25 +1,23 @@
-# Recommendations to CTO
+# Short memo for CTO — support intent routing
 
-## Executive Summary
-The system is operationally viable for staged deployment, but release should remain gated by drift and reliability controls. The largest near-term risks are distribution shift and retrieval-layer contamination.
+## TL;DR
+Fine to ship incremental traffic if drift + alerting stay boring. Retrieval junk and slow regression when traffic mix changes worry me more than raw accuracy numbers from a leaderboard.
 
-## Priority Actions
-1. Enforce drift-triggered retraining when PSI exceeds 0.20 for three consecutive windows.
-2. Maintain canary release policy with automated rollback tied to error and latency guardrails.
-3. Expand governance controls around retrieval source curation and freshness.
-4. Institutionalize monthly fairness and compliance reviews using audit-trail evidence.
+## What I'd actually fund next
+1. **Drift playbook:** PSI over ~0.2 for a few rolling windows ⇒ someone opens a ticket, runs the drift script, decides retrain vs data fix—not “wait until users complain.”
+2. **Canary discipline:** automate rollback hooks off error band + latency (same thresholds we sketched on the dashboard memo).
+3. **KB/source hygiene:** who owns doc freshness when products ship weekly? Retrieval without owners rots fast.
+4. **Quarter-ish governance touchpoint:** quick fairness slice review isn’t flashy but keeps you honest.
 
-## Investment Recommendation
-Approve phased rollout with governance conditions. The projected routing-quality gains from Variant B justify launch, provided monitoring-alert response and retraining workflows are staffed.
+Green light for phased rollout on B assuming there’s a real owner for paging through alerts—you don’t learn anything from Grafana if nobody reacts.
 
-## Human Escalation Protocol (Operational)
-For ambiguous or risky outputs encountered in staged rollout:
+## When humans jump in
 
-1. **Triage tiers**
-   - **Tier 1 (auto):** model confidence acceptable and guardrails satisfied → route automation.
-   - **Tier 2 (review queue):** low confidence OR elevated drift window OR anomalies spike → send to reviewer with decision trace snapshot.
-   - **Tier 3 (stop-the-line):** suspected prompt/tool misuse, policy-sensitive category, breach of latency/error guardrails → block automation and escalate to on-call engineer + AI governance liaison.
+**Tier 1 — auto:** Confidence ok, gauges normal. Let tooling route tickets.
 
-2. **SLAs**
-   - Tier 2: review SLA **< 60 minutes** business hours / **< 4 hours** off-hours surrogate.
-   - Tier 3: immediate paging for sustained breach conditions described in alerting rules (`dashboards/prometheus-rules.yml`) and dashboards.
+**Tier 2 — review queue:** Weird confidence OR drift creeping OR burst of malformed payloads → human eyeballs it; attach whatever trace you logged.
+
+**Tier 3 — pager:** Probable abusive prompt/tool path, nasty policy category, latency/error SLA blown → halt automation until eng + whoever owns governance signs off.
+
+**Timing:** Aim for Tier-2 turnaround ~1 hr business hours (we said ~4 hr nights/weekends as placeholder). Tier-3 = page instantly if it’s sticking per `prometheus-rules.yml` / dashboard triggers.
+
