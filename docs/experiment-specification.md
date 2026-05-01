@@ -1,28 +1,23 @@
-# Offline A/B experiment spec
+# Experiment specification (offline sim)
 
-## Guess I'm testing
-Variant B tweaks retrieval + prompting for the classifier. Hypothesis: it bumps SLA-resolution-ish success vs A by ≥3 pts without dragging latency past the guardrails baked into monitoring configs.
+Plain-language version of what the assignment asks for: hypothesis, metrics, randomization, sample size, and how I’ll read the statistics.
 
-## What I cared about counting
-Primary: SLA-resolution proxy (Bernoulli per interaction).
+## Hypothesis
+Variant B (retrieval + prompt tuning) bumps the SLA-resolution proxy vs variant A by at least ~3 percentage points, without violating the latency/error guardrails you’d watch on Grafana.
 
-Sides: simulated latency pulls, escalation flag, coarse groundedness heuristic from audit passes.
+## Success metrics (match the rubric list)
+Primary: SLA-resolution proxy (Bernoulli; “did this route resolve inside our SLA-ish window”).  
+Secondary / guardrails: simulated latency draws, escalation flag (“had to escalate / hand off”), cheap groundedness pass rate from mocked audits.
 
-Rough business read: happier first-pass routing + fewer escalations.
+Business KPI (same spirit as the checklist): happier first-shot routing plus fewer escalations—mirrors SLA + escalation pair above.
 
-## Assignment / randomization
-Hash session IDs mod 2 for 50/50 so retries stick to same arm unless you purposely rotate sessions.
+## Randomization method
+Session IDs hash mod two → deterministic 50/50 split so repeat requests land in the same arm unless you regenerate sessions intentionally.
 
-## How big / how long
-Used baseline p≈0.62, wanna catch ~3 pts MDE at α=.05 power ~0.8 → ballpark ~4k samples each side (formula's in code). Assuming ~600 real sessions/day, you're looking ~2-ish weeks—not holy writ if traffic differs.
+## Required sample size and duration (power sketch)
+Assume baseline success ≈0.62, MDE ≈0.03, α=0.05, power ≈0.8, pooled Bernoulli SD ≈0.48 → ~4k sessions per variant (same math surfaced in `src/ab_test/simulation.py`). Ballpark timeline if you honestly see ~600 sessions/day ≈two weeks—adjust if throughput differs.
 
-## Stats plan (keep it sane)
-Primary diff: pooled two-proportion z + Wald CI printed in simulator.
-
-Extras: Welch t-test on latency distributions; escalate/groundedness treated sanity-check tier because multiplicity gets messy fast.
-
-Decision story: nail primary hypothesis first (reject if CI straddles 0 awkwardly).
-
-Then stare at latency + escalation—don't ship B just because auxiliary tests fluke unless you honestly pre-committed to them being gates.
-
-Bonferroni exists if graders care; realistically I prioritized the SLA metric unless we formalized secondaries upfront.
+## Statistical evaluation
+Primary KPI: pooled two-sample proportion z-test with Wald CI printed by the simulator.  
+Latency: Welch t-test on sampled latencies because it isn’t Bernoulli.  
+Escalation + groundedness: sanity-check guardrails since testing everything at α=.05 invites false positives—I lead with the SLA primary, glance at latency/escalations second, Bonferroni-style correction only if multiple metrics were contractual gates upfront.

@@ -37,5 +37,11 @@ Support ticket **intent routing** toy system (**synthetic / demo traffic only**)
 - C4: `src/drift/drift_detection.py`, `visualizations/drift_over_time.png`, `docs/drift-diagnostic-report.md`
 - C5: `docs/governance-review.md`, `docs/risk-matrix.md`, `docs/system-boundary-diagram.png`, `docs/cto-memo.md`
 
-## Lessons learned (short)
-Metrics don't help if alerts don't map to anyone's job (“now what?”). Drift graphs are the same—they're only actionable if ops knows when to freeze or queue a retrain. Governance pages should match what's actually enforced at release—not a stack of screenshots nobody reads.
+## Lessons learned (across milestones)
+Stuff from earlier IDS modules still matter here: pinning deps + repeatable env setup so `pip install -r requirements.txt` matches what someone else clones; separating training vs inference paths so monitoring isn’t glued to Jupyter-only workflows; documenting releases even when it’s tedious.
+
+Concrete tie-ins for this submission: Grafana/Prometheus mimic what Milestone-ish serving work wanted (expose `/metrics`, watch latency/error tails); drift + audit-stub logging extend the Milestone-era “watch your pipeline” mentality; governance sheets carry forward the memo/model-card discipline instead of rewriting from scratch each week.
+
+Operational reality check: dashboards are useless unless on-call agrees what “good” vs “rollback” looks like beforehand. Drift visualizations matter only once they map to freeze/retrain/playbook—not because the chart is pretty.
+
+**Follow whatever your syllabus says about tools / originality** when you paste the submission comment on Blackboard/Canvas—I’m not rewriting that boilerplate inside the filenames.
